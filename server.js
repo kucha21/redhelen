@@ -56,8 +56,7 @@ async function initDb(){
   }
 }
 
-app.use(express.json({limit:"1mb"}));
-app.use(express.urlencoded({extended:true}));
+app.set("trust proxy", 1);
 app.use(session({
   secret: process.env.SESSION_SECRET || "CHANGE_ME_SESSION_SECRET",
   resave: false,
@@ -70,6 +69,7 @@ app.use(session({
     maxAge: 8 * 60 * 60 * 1000
   }
 }));
+
 app.use(express.static(path.join(__dirname,"public")));
 
 function admin(req,res,next){ if(req.session.admin) return next(); res.status(401).json({error:"Unauthorized"}); }
