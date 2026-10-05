@@ -294,10 +294,20 @@
         return;
       }
 
-      const formattedItems = cart.length > 0 ? cart.map(item => ({
-        id: item.id || item.product_id,
-        qty: item.qty
-      })) : [{ type: "custom_order", note: document.getElementById("note").value.trim() || "ინდივიდუალური შეკვეთა" }];
+      // გარანტირებული არაცარიელი items მასივი, რომ ძველმა სერვერმაც მიიღოს
+      let sendItems = [];
+      if (cart && cart.length > 0) {
+        sendItems = cart.map(item => ({
+          product_id: item.id || item.product_id || 1,
+          qty: item.qty || 1
+        }));
+      } else {
+        sendItems = [{
+          product_id: 0,
+          name: "Custom Order / ინდივიდუალური შეკვეთა",
+          qty: 1
+        }];
+      }
 
       const body = {
         customer_name: nameVal,
@@ -308,7 +318,7 @@
         note: document.getElementById("note").value.trim(),
         language: lang,
         payment_method: document.getElementById("payment").value,
-        items: formattedItems
+        items: sendItems
       };
 
       try {
