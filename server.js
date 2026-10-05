@@ -70,6 +70,7 @@ app.use(session({
   }
 }));
 
+
 app.use(express.static(path.join(__dirname,"public")));
 
 function admin(req,res,next){ if(req.session.admin) return next(); res.status(401).json({error:"Unauthorized"}); }
