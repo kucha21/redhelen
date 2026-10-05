@@ -1,90 +1,47 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const { Pool } = require("pg");
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
+
+// Static files
 app.use(express.static(path.join(__dirname)));
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
-
 // Products API
-app.get("/api/products", async (req, res) => {
-  try {
-    const lang = req.query.lang || "ka";
-    const result = await pool.query("SELECT * FROM products ORDER BY id ASC");
-    
-    const products = result.rows.map(p => ({
-      id: p.id,
-      sku: p.sku || `RH-${p.id}`,
-      name: lang === "en" ? (p.name_en || p.name) : lang === "ru" ? (p.name_ru || p.name) : p.name,
-      description: lang === "en" ? (p.description_en || p.description) : lang === "ru" ? (p.description_ru || p.description) : p.description,
-      price: parseFloat(p.price) || 0,
-      image: p.image || ""
-    }));
+app.get('/api/products', (req, res) => {
+  const products = [
+    { id: 1, sku: 'RH-W01', name: 'ტყავის საფულე Classic', price: 85, description: 'ნატურალური ტყავის საფულე', image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=500&q=80' },
+    { id: 2, sku: 'RH-B01', name: 'ტყავის ქამარი Premium', price: 95, description: 'ხელნაკეთი ტყავის ქამარი', image: 'https://images.unsplash.com/photo-1624222247344-550fb60583dc?auto=format&fit=crop&w=500&q=80' },
+    { id: 3, sku: 'RH-H01', name: 'Glock 17/19 კაბურა', price: 120, description: 'ნატურალური ტყავის კაბურა', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80' }
+  ];
+  res.json(products);
+});
 
-    res.json(products);
-  } catch (err) {
-    console.error("Products Fetch Error:", err);
-    res.status(500).json({ error: "Failed to fetch products" });
+// Orders API
+app.post('/api/orders', (req, res) => {
+  const { customer_name, phone } = req.body;
+
+  if (!customer_name || !phone) {
+    return res.status(400).json({ error: "გთხოვთ მიუთითოთ სახელი და ტელეფონი" });
   }
+
+  const orderNo = "RH-" + Math.floor(100000 + Math.random() * 900000);
+  console.log("ახალი შეკვეთა:", req.body);
+
+  res.status(200).json({
+    success: true,
+    order_no: orderNo,
+    message: "შეკვეთა წარმატებით დარეგისტრირდა"
+  });
 });
 
-// Orders API (Fixed validation)
-app.post("/api/orders", async (req, res) => {
-  try {
-    const { customer_name, phone, email, city, address, note, language, payment_method, items } = req.body;
-
-    // Validation: Require at least Name and Phone
-    if (!customer_name || !phone) {
-      return res.status(400).json({ error: "გთხოვთ მიუთითოთ სახელი და ტელეფონი / Please provide name and phone" });
-    }
-
-    const orderNo = "RH-" + Date.now().toString().slice(-6);
-    const itemList = Array.isArray(items) && items.length > 0 ? JSON.stringify(items) : JSON.stringify([{ note: "Custom Order / ინდივიდუალური შეკვეთა" }]);
-
-    // Insert order into Postgres DB
-    const query = `
-      INSERT INTO orders (order_no, customer_name, phone, email, city, address, note, language, payment_method, items, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
-      RETURNING *;
-    `;
-
-    const values = [
-      orderNo,
-      customer_name,
-      phone,
-      email || "",
-      city || "",
-      address || "",
-      note || "",
-      language || "ka",
-      payment_method || "cash",
-      itemList
-    ];
-
-    await pool.query(query, values);
-
-    res.json({ success: true, order_no: orderNo });
-  } catch (err) {
-    console.error("Order Creation Error:", err);
-    res.status(500).json({ error: "Server Error: Could not save order" });
-  }
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Serve Frontend
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-      
