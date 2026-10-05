@@ -115,7 +115,7 @@
       <div>
         <h2 data-t="custom">შეკვეთით დამზადება</h2>
         <p data-t="customp">განსაკუთრებული ზომა, ფერი ან წარწერა? გამოგვიგზავნე მოთხოვნა.</p>
-        <button class="btn" onclick="openCustomCheckout()" data-t="order">შეკვეთის დაწყება</button>
+        <button class="btn" onclick="openCheckoutDirect()" data-t="order">შეკვეთის დაწყება</button>
       </div>
       <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1000&q=85" alt="Custom">
     </section>
@@ -182,7 +182,7 @@
     const T = {
       ka: { shop:"მაღაზია", about:"ჩვენ შესახებ", custom:"შეკვეთით", contact:"კონტაქტი", eyebrow:"ხელით შექმნილი • ნატურალური ტყავი", hero:"ტყავის ნივთები, რომლებიც დროს უძლებს", herop:"RedHelen • რედჰელენი — ხელით შექმნილი ტყავის ნივთები, ინდივიდუალური დიზაინითა და დეტალებისადმი ყურადღებით.", shopbtn:"მაღაზიის ნახვა →", wallets:"საფულეები", bags:"ჩანთები", belts:"ქამრები", holsters:"კაბურები", popular:"პოპულარული პროდუქტები", aboutp:"თითოეული RedHelen ნივთი ხელით მზადდება, ყურადღებით დამუშავებული ტყავითა და დეტალებით.", customp:"განსაკუთრებული ზომა, ფერი ან წარწერა? გამოგვიგზავნე მოთხოვნა.", order:"შეკვეთის დაწყება", tag:"ხელნაკეთი ტყავის ნივთები.", cart:"კალათა", total:"ჯამი", checkout:"შეკვეთის გაფორმება", name:"სახელი და გვარი", phone:"ტელეფონი", email:"ელფოსტა", city:"ქალაქი", address:"მისამართი", note:"დამატებითი ინფორმაცია", payment:"გადახდა", send:"შეკვეთის გაგზავნა" },
       en: { shop:"Shop", about:"About us", custom:"Custom", contact:"Contact", eyebrow:"HANDMADE • GENUINE LEATHER", hero:"Leather goods made to last", herop:"RedHelen — handmade leather goods with individual design and attention to detail.", shopbtn:"Shop now →", wallets:"Wallets", bags:"Bags", belts:"Belts", holsters:"Holsters", popular:"Popular products", aboutp:"Every RedHelen piece is handmade with carefully selected leather and attention to detail.", customp:"Need a special size, color or engraving? Send us your request.", order:"Start a custom order", tag:"Handmade leather goods.", cart:"Cart", total:"Total", checkout:"Checkout", name:"Full name", phone:"Phone", email:"Email", city:"City", address:"Address", note:"Additional information", payment:"Payment", send:"Place order" },
-      ru: { shop:"Магазин", about:"О нас", custom:"На заказ", contact:"Контакты", eyebrow:"РУЧНАЯ РАБОТА • НАТУРАЛЬНАЯ КОЖА", hero:"Кожаные изделия, созданные надолго", herop:"RedHelen — изделия из кожи ручной работы с индивидуальным дизайном и вниманием к деталям.", shopbtn:"Перейти в магазин →", wallets:"Кошельки", bags:"Сумки", belts:"Ремни", holsters:"Кобуры", popular:"Популярные товары", aboutp:"Каждое изделие RedHelen изготовлено вручную из тщательно подобранной кожи.", customp:"Нужен особый размер, цвет или надпись? Отправьте запрос.", order:"Начать заказ",tag:"Кожаные изделия ручной работы.", cart:"Корзина", total:"Итого", checkout:"Оформление заказа", name:"Имя и фамилия", phone:"Телефон", email:"Email", city:"Город", address:"Адрес", note:"Дополнительная информация", payment:"Оплата", send:"Отправить заказ" }
+      ru: { shop:"Магазин", about:"О нас", custom:"На заказ", contact:"Контакты", eyebrow:"РУЧНАЯ РАБОТА • НАТУРАЛЬНАЯ КОЖА", hero:"Кожаные изделия, созданные надолго", herop:"RedHelen — изделия из кожи ручной работы с индивидуальным дизайном и вниманием к деталям.", shopbtn:"Перейти в магазин →", wallets:"Кошельки", bags:"Сумки", belts:"Ремни", holsters:"Кобуры", popular:"Популярные товары", aboutp:"Каждое изделие RedHelen изготовлено вручную из тщательно подобранной кожи.", customp:"Нужен особый размер, цвет или надпись? Отправьте запрос.", order:"Начать заказ", tag:"Кожаные изделия ручной работы.", cart:"Корзина", total:"Итого", checkout:"Оформление заказа", name:"Имя и фамилия", phone:"Телефон", email:"Email", city:"Город", address:"Адрес", note:"Дополнительная информация", payment:"Оплата", send:"Отправить заказ" }
     };
 
     let lang = localStorage.rh_lang || "ka";
@@ -266,11 +266,8 @@
       document.getElementById("total").textContent = "₾" + total;
     }
 
-    function openCustomCheckout() {
-      if (!cart.length && products.length > 0) {
-        add(products[0].id);
-      }
-      openCheckout();
+    function openCheckoutDirect() {
+      document.getElementById("checkout").classList.add("on");
     }
 
     function openCheckout() {
@@ -288,19 +285,23 @@
 
     async function submitOrder(e) {
       e.preventDefault();
-      if (!cart.length) {
-        alert("კალათა ცარიელია!");
+
+      const nameVal = document.getElementById("name").value.trim();
+      const phoneVal = document.getElementById("phone").value.trim();
+
+      if (!nameVal || !phoneVal) {
+        alert("გთხოვთ შეავსოთ სახელი და ტელეფონი");
         return;
       }
 
-      const formattedItems = cart.map(item => ({
+      const formattedItems = cart.length > 0 ? cart.map(item => ({
         id: item.id || item.product_id,
         qty: item.qty
-      }));
+      })) : [{ type: "custom_order", note: document.getElementById("note").value.trim() || "ინდივიდუალური შეკვეთა" }];
 
       const body = {
-        customer_name: document.getElementById("name").value.trim(),
-        phone: document.getElementById("phone").value.trim(),
+        customer_name: nameVal,
+        phone: phoneVal,
         email: document.getElementById("email").value.trim(),
         city: document.getElementById("city").value.trim(),
         address: document.getElementById("address").value.trim(),
